@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .pinyin-wrapper {
+            width: 300px;
+            text-align: center;
+        }
+        .pinyin {
+            font-size: 20px;
+            padding: 10px 0;
+            font-family: sans-serif;
+        }
+        .hanzi-container {
+            width: 300px;
+            height: 300px;
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nightMode .hanzi-container {
+            background-color: #BBB; /* Darker container */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .button-wrapper {
+            display: flex;
+            flex-direction: row;
+            width: 300px;
+            column-gap: 4px;
+            justify-content: center;
+        }
+        .preview-btn {
+            width: 50%;
+            margin: 0 auto;
+        }
+        .meaning {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            padding: 10px 0;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="pinyin-wrapper">
+        <span class="pinyin">{{Pinyin}}</span>
+    </div>
+    <div id="hanzi-container" class="hanzi-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" id="grid-background-target">
+            <line x1="5" y1="5" x2="295" y2="295" stroke="#DDD" />
+            <line x1="295" y1="0" x2="0" y2="295" stroke="#DDD" />
+            <line x1="150" y1="0" x2="150" y2="300" stroke="#DDD" />
+            <line x1="0" y1="150" x2="300" y2="150" stroke="#DDD" />
+        </svg>
+    </div>
+    <div class="meaning"><span>{{Meaning}}</span></div>
+    <div class="button-wrapper">
+        <button id="#preview-btn" class="preview-btn" onclick="TriggerAnimation()">Show Preview</button>
+        <button id="#reset-btn" class="preview-btn" onclick="StartFromFirstChar()">Start Over</button>
+    </div>
+    <script src="hanzi-writer.min.js"></script>
+    <script>
+        var writer;
+        var container = document.getElementById('hanzi-container');
+        var proficiency = parseInt(`{{Proficiency}}` || 0);
+        var currCharIndex = 0;
+        var fullString = '{{Hanzi}}'.replace(/[^\u4E00-\u9FFF]/g, '') || '字';
+        var currChar = fullString[currCharIndex];
+
+        function TriggerAnimation() {
+            writer.animateCharacter({
+                onComplete: function() {
+                    TriggerQuiz();
+                }
+            });
+        }
+
+        function TriggerQuiz() {
+            writer.quiz({
+                onComplete: function() {
+                    ShowNextCharacter();
+                }
+            })
+        }
+
+        function ShowNextCharacter() {
+            if (currCharIndex < fullString.length - 1) {
+                currCharIndex += 1;
+                currChar = fullString[currCharIndex];
+                writer.setCharacter(currChar);
+
+                if (proficiency < 5) {
+                    TriggerAnimation();
+                } else {
+                    TriggerQuiz();
+                }
+            }
+        }
+
+        function StartFromFirstChar() {
+            currCharIndex = 0;
+            currChar = fullString[currCharIndex];
+            writer.setCharacter(currChar).then(() => {
+                if (proficiency < 5) {
+                TriggerAnimation();
+                } else {
+                    TriggerQuiz();
+                }
+            });
+        }
+
+        function initializeHanziWriter() {
+            try {
+                if (container) {
+                    //Set playback speed based on proficiency.
+                    var strokeSpeed = 1;
+                    var strokeDelay = 500;
+                    if (proficiency >= 3) {
+                        strokeSpeed = 1.5;
+                        strokeDelay = 100;
+                    }
+
+                    //Determine whether outline should be shown.
+                    var shouldShowOutline = true;
+                    if (proficiency >= 15) {
+                        shouldShowOutline = false;
+                    }
+
+                    //Determine when to show next line hint.
+                    var numMissesBeforeHint = 3
+                    if(proficiency < 5) {
+                        numMissesBeforeHint = 1;
+                    }
+
+                    writer = HanziWriter.create('grid-background-target', currChar, {
+                        width: 300,
+                        height: 300,
+                        outlineColor: '#999',
+                        showOutline: shouldShowOutline,
+                        showCharacter: shouldShowOutline,
+                        showHintAfterMisses: numMissesBeforeHint,
+                        padding: 10,
+                        strokeAnimationSpeed: strokeSpeed,
+                        delayBetweenStrokes: strokeDelay,
+                        strokeColor: '#333',
+                    });
+
+                    if (proficiency < 5) {
+                        TriggerAnimation();
+                    } else {
+                        var previewBtn = document.querySelector('#preview-btn');
+                        if (previewBtn) {
+                            previewBtn.style.display = 'none';
+                        }
+                        TriggerQuiz();
+                    }
+
+                    //Hide start over button if only 1 char in hanzi field.
+                    if (fullString.length <= 1) {
+                        var startOverBtn = document.querySelector('#reset-btn');
+                        if (startOverBtn) {
+                            startOverBtn.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (e) {
+                setTimeout(initializeHanziWriter, 100);
+            }
+        }
+        // Start the initialization process
+        initializeHanziWriter();
+    </script>
+</body>
+</html>

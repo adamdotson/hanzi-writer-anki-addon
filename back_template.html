@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .pinyin-wrapper {
+            width: 300px;
+            text-align: center;
+        }
+        .pinyin {
+            font-size: 20px;
+            padding: 10px 0;
+            font-family: sans-serif;
+        }
+        .hanzi-container {
+            width: 300px;
+            height: 300px;
+            padding: 0 auto;
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .nightMode .hanzi-container {
+            background-color: #BBB; /* Darker container */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .meaning {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .preview-btn {
+            margin: 5px 0;
+            padding: 10px 0;
+            font-size: 16px;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 300px;
+        }
+        .preview-btn:hover {
+            background-color: #45a049;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="pinyin-wrapper">
+        <span class="pinyin">{{Pinyin}}</span>
+    </div>
+    <div id="hanzi-container" class="hanzi-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" id="grid-background-target">
+            <line x1="5" y1="5" x2="295" y2="295" stroke="#DDD" />
+            <line x1="295" y1="0" x2="0" y2="295" stroke="#DDD" />
+            <line x1="150" y1="0" x2="150" y2="300" stroke="#DDD" />
+            <line x1="0" y1="150" x2="300" y2="150" stroke="#DDD" />
+        </svg>
+    </div>
+    <div class="meaning">{{Meaning}}</div>
+    <button id="#preview-btn" class="preview-btn" onclick="ShowFullAnimation()">Show Preview</button>
+    <button id="#quiz-btn" class="preview-btn" onclick="StartFullQuiz()">Practice</button>
+    <button id="#toggle-preview-btn" class="preview-btn" onclick="TogglePreview()">Toggle Outline</button>
+    <script src="hanzi-writer.min.js"></script>
+    <script>
+        var writer;
+        var container = document.getElementById('hanzi-container');
+        var proficiency = parseInt(`{{Proficiency}}` || 0);
+        var currCharIndex = 0;
+        var fullString = '{{Hanzi}}'.replace(/[^\u4E00-\u9FFF]/g, '') || '字';
+        var currChar = fullString[currCharIndex];
+        var shouldShowOutline = true;
+
+        function TriggerAnimation() {
+            writer.animateCharacter({
+                onComplete: function() {
+                    ShowNextCharacterAnimation();
+                }
+            });
+        }
+
+        function ShowNextCharacterAnimation() {
+            if (currCharIndex < fullString.length - 1) {
+                currCharIndex += 1;
+                currChar = fullString[currCharIndex];
+                writer.setCharacter(currChar);
+
+                TriggerAnimation();
+            }
+        }
+
+        function TriggerQuiz() {
+            writer.quiz({
+                onComplete: function() {
+                    ShowNextCharacterQuiz();
+                }
+            })
+        }
+
+        function ShowNextCharacterQuiz() {
+            if (currCharIndex < fullString.length - 1) {
+                currCharIndex += 1;
+                currChar = fullString[currCharIndex];
+                writer.setCharacter(currChar);
+
+                TriggerQuiz();
+            }
+        }
+
+        function ShowFullAnimation() {
+            writer.cancelQuiz();
+            currCharIndex = 0;
+            currChar = fullString[currCharIndex];
+            writer.setCharacter(currChar).then(() => {
+                TriggerAnimation();
+            });
+        }
+
+        function StartFullQuiz() {
+            writer.cancelQuiz();
+            currCharIndex = 0;
+            currChar = fullString[currCharIndex];
+            writer.setCharacter(currChar).then(() => {
+                TriggerQuiz();
+            });
+        }
+
+        function TogglePreview() {
+            shouldShowOutline = !shouldShowOutline;
+            if (shouldShowOutline) {
+                writer.showOutline();
+            } else {
+                writer.hideOutline();
+            }
+        }
+
+        function initializeHanziWriter() {
+            try {
+                if (container) {
+                    //Set playback speed based on proficiency.
+                    var strokeSpeed = 1;
+                    var strokeDelay = 500;
+                    if (proficiency >= 3) {
+                        strokeSpeed = 1.5;
+                        strokeDelay = 100;
+                    }
+
+                    //Determine whether outline should be shown.
+
+                    writer = HanziWriter.create('grid-background-target', currChar, {
+                        width: 300,
+                        height: 300,
+                        outlineColor: '#999',
+                        showOutline: shouldShowOutline,
+                        showCharacter: true,
+                        padding: 10,
+                        strokeAnimationSpeed: strokeSpeed,
+                        delayBetweenStrokes: strokeDelay,
+                        strokeColor: '#333',
+                    });
+
+                    TriggerAnimation();
+                }
+            } catch (e) {
+                setTimeout(initializeHanziWriter, 100);
+            }
+        }
+        initializeHanziWriter();
+    </script>
+</body>
+</html>
