@@ -98,9 +98,8 @@ def refresh_templates():
         tmpl["qfmt"] = load_template("front_template.html")
         tmpl["afmt"] = load_template("back_template.html")
         mw.col.models.save(model)
-        showInfo("Templates refreshed. Review a card to see changes.")
     else:
-        showInfo("Error: HanziWriter Card note type not found.")
+        showInfo("Error: Hanzi Writer Card note type not found.")
 
 
 def update_proficiency(card, ease):
