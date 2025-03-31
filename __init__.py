@@ -11,6 +11,7 @@ import sys
 
 card_name = "Hanzi Writer Card"
 
+#Debug errors/printouts to log file.
 def log_debug(message):
     with open(os.path.join(addon_dir, "debug.log"), "a") as f:
         f.write(f"{message}\n")
@@ -20,6 +21,7 @@ addon_dir = os.path.dirname(__file__)
 dictFileName = os.path.join(addon_dir, "mandarin-dictionary.json")
 mandarinDict = {}
 
+#Add audio to note from audio button.
 def add_audio_to_note(editor: Editor):
     if editor.note.model()["name"] != card_name:
         return
@@ -38,23 +40,27 @@ def add_audio_to_note(editor: Editor):
     editor.note["Audio"] = f"[sound:{filename}]"
     editor.loadNote()
 
+#Include button to add audio file to Audio field (if exists).
 def setup_editor_buttons(buttons, editor):
-    newBtn = editor.addButton(
-        icon=None,
-        cmd="add_audio",
-        func=lambda e=editor: add_audio_to_note(e),
-        tip="Add Audio File",
-        label="Add Audio"
-    )
-    buttons.append(newBtn)
+    try:
+        newBtn = editor.addButton(
+            icon=None,
+            cmd="add_audio",
+            func=lambda e=editor: add_audio_to_note(e),
+            tip="Add Audio File",
+            label="Add Audio"
+        )
+        buttons.append(newBtn)
+    except:
+        log_debug("Error occurred when adding audio button.")
 
 def load_template(file_name):
-    """Load an HTML template from a file."""
+    #Load an HTML template from a file.
     with open(os.path.join(addon_dir, file_name), "r", encoding="utf-8") as f:
         return f.read()
 
 def copy_media_file():
-    """Copy hanzi-writer.min.js to collection.media if not already present."""
+    #Copy hanzi-writer.min.js to collection.media if not already present.
     source_path = os.path.join(addon_dir, "hanzi-writer.min.js")
     media_dir = mw.col.media.dir()
     dest_path = os.path.join(media_dir, "hanzi-writer.min.js")
@@ -80,10 +86,11 @@ def setup_hanziwriter_card():
         mw.col.models.save(model)
         showInfo(f"Created note type: {model_name}")
     else:
-        refresh_templates()  # Update existing model on load
+        refresh_templates()
 
+#If plugin already installed, ensure user has latest front-end/back-end card designs.
 def refresh_templates():
-    """Reload templates into the existing note type."""
+    #Reload templates into the existing note type.
     model_name = card_name
     model = mw.col.models.byName(model_name)
     if model:
@@ -95,8 +102,9 @@ def refresh_templates():
     else:
         showInfo("Error: HanziWriter Card note type not found.")
 
+
 def update_proficiency(card, ease):
-    """Update Proficiency based on review ease (1=Again, 2=Hard, 3=Good, 4=Easy)."""
+    #Update Proficiency based on review ease (1=Again, 2=Hard, 3=Good, 4=Easy).
     note = card.note()
     if note.model()["name"] == card_name:
         current_prof = int(note["Proficiency"] or "0")
@@ -111,13 +119,7 @@ def update_proficiency(card, ease):
         note["Proficiency"] = str(new_prof)
         note.flush()  # Save to database
 
-def hide_proficiency_field(editor):
-    if editor.note and editor.note.model()["name"] == "Hanzi Writer Card":
-        prof_idx = editor.note._fieldOrd("Proficiency")  # Get Proficiency index
-        editor.web.eval(f"""
-            document.getElementById('f{4}').parentElement.style.display = 'none';
-        """)
-
+#Automatically populate the pinyin field based on the hanzi field.
 def update_pinyin_field(wasChanged, note, field_idx):
     global current_editor
     try:
@@ -137,21 +139,21 @@ def update_pinyin_field(wasChanged, note, field_idx):
         log_debug("Error when updating the pinyin field.")
 
 
-# Run on profile load
+# Ensure that necessary files for plugin are synced so this tool works on mobile.
 def on_profile_load():
     copy_media_file()
     setup_hanziwriter_card()
-
 gui_hooks.profile_did_open.append(on_profile_load)
 
 # Menu options
-setup_action = QAction("Setup HanziWriter Card", mw)
-setup_action.triggered.connect(lambda: [copy_media_file(), setup_hanziwriter_card()])
-mw.form.menuTools.addAction(setup_action)
+# setup_action = QAction("Setup HanziWriter Card", mw)
+# setup_action.triggered.connect(lambda: [copy_media_file(), setup_hanziwriter_card()])
+# mw.form.menuTools.addAction(setup_action)
 
-refresh_action = QAction("Refresh HanziWriter Templates", mw)
-refresh_action.triggered.connect(refresh_templates)
-mw.form.menuTools.addAction(refresh_action)
+# refresh_action = QAction("Refresh HanziWriter Templates", mw)
+# refresh_action.triggered.connect(refresh_templates)
+# mw.form.menuTools.addAction(refresh_action)
+
 # Hooks
 current_editor = None
 
