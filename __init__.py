@@ -1,5 +1,5 @@
 from aqt import mw, gui_hooks
-from aqt.utils import showInfo
+from aqt.utils import getFile, showInfo
 from anki.models import NoteType
 from aqt import QAction
 from aqt.editor import Editor
@@ -20,7 +20,33 @@ addon_dir = os.path.dirname(__file__)
 dictFileName = os.path.join(addon_dir, "mandarin-dictionary.json")
 mandarinDict = {}
 
+def add_audio_to_note(editor: Editor):
+    if editor.note.model()["name"] != card_name:
+        return
+    # Prompt user to select an audio file
+    file_path = getFile(editor.widget, "Select Audio File", None, filter="Audio Files (*.mp3 *.wav *.m4a)")
+    if not file_path:
+        return
+    # Get the filename and copy it to the media folder
+    filename = os.path.basename(file_path)
+    media_dir = mw.col.media.dir()
+    dest_path = os.path.join(media_dir, filename)
+    if not os.path.exists(dest_path):
+        with open(file_path, 'rb') as src, open(dest_path, 'wb') as dst:
+            dst.write(src.read())
+    # Insert the audio reference into a field (e.g., "Audio")
+    editor.note["Audio"] = f"[sound:{filename}]"
+    editor.loadNote()
 
+def setup_editor_buttons(buttons, editor):
+    newBtn = editor.addButton(
+        icon=None,
+        cmd="add_audio",
+        func=lambda e=editor: add_audio_to_note(e),
+        tip="Add Audio File",
+        label="Add Audio"
+    )
+    buttons.append(newBtn)
 
 def load_template(file_name):
     """Load an HTML template from a file."""
@@ -133,14 +159,13 @@ def on_editor_init(editor):
     global current_editor
     global mandarinDict
     current_editor = editor
-    hide_proficiency_field(current_editor)
     try:
         with open(dictFileName, 'r', encoding="utf-8") as mandarinDictFile:
             mandarinDict = json.loads(mandarinDictFile.read())
     except:
         log_debug("Error opening mandarin dictionary.")
 
-
 gui_hooks.editor_did_init.append(on_editor_init)
 gui_hooks.editor_did_unfocus_field.append(lambda wasChanged, note, field_idx: update_pinyin_field(wasChanged, note, field_idx))
 gui_hooks.reviewer_did_answer_card.append(lambda editor, card, ease: update_proficiency(card, ease))
+gui_hooks.editor_did_init_buttons.append(setup_editor_buttons)

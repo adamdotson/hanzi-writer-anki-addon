@@ -57,6 +57,17 @@
     </style>
 </head>
 <body>
+    <audio id="myAudio">
+        <source src="{{Audio}}" type="audio/mp3">
+    </audio>
+    <script>
+        window.addEventListener('load', function() {
+            var audio = document.getElementById('myAudio');
+            audio.play().catch(function(error) {
+                console.log("Autoplay failed:", error);
+            });
+        });
+    </script>
     <div class="pinyin-wrapper">
         <span class="pinyin">{{Pinyin}}</span>
     </div>
