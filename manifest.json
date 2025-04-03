@@ -1,5 +1,10 @@
 {
     "package": "hanzi_quiz",
-    "name": "HanziWriter Integration",
-    "version": "1.0.0"
+    "name": "Hanzi Writer Card",
+    "description": "Uses hanzi-writer.js to assist in learning to read and write simplified and traditional Chinese characters.",
+    "version": "1.0.0",
+    "author": "adamdotson",
+    "conflicts": [],
+    "dependencies": [],
+    "targets": ["anki21"]
 }
