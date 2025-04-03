@@ -6,5 +6,6 @@
     "author": "adamdotson",
     "conflicts": [],
     "dependencies": [],
+    "ankicode": "175559425",
     "targets": ["anki21"]
 }
