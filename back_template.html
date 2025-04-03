@@ -37,27 +37,23 @@
         }
         .meaning {
             font-size: 24px;
-            color: #333;
             text-align: center;
-            background-color: #fff;
+            padding: 10px 0;
             border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             width: 300px;
         }
         .preview-btn {
+            width: 300px;
             margin: 5px 0;
-            padding: 10px 0;
             font-size: 16px;
-            color: white;
-            background-color: #4CAF50;
+            padding: 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
-            width: 300px;
         }
         .preview-btn:hover {
-            background-color: #45a049;
+            background-color: #5F5F5F;
             border: none;
         }
     </style>
@@ -157,6 +153,14 @@
         function initializeHanziWriter() {
             try {
                 if (container) {
+                    var hanziDiv = document.getElementById('hanzi-container');
+                    ['touchstart', 'touchmove', 'touchend'].forEach(function(eventName) {
+                        hanziDiv.addEventListener(eventName, function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                        }, false);
+                    });
+
                     //Set playback speed based on proficiency.
                     var strokeSpeed = 1;
                     var strokeDelay = 500;

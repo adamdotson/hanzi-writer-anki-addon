@@ -145,13 +145,13 @@ def on_profile_load():
 gui_hooks.profile_did_open.append(on_profile_load)
 
 # Menu options
-# setup_action = QAction("Setup HanziWriter Card", mw)
-# setup_action.triggered.connect(lambda: [copy_media_file(), setup_hanziwriter_card()])
-# mw.form.menuTools.addAction(setup_action)
+setup_action = QAction("Setup HanziWriter Card", mw)
+setup_action.triggered.connect(lambda: [copy_media_file(), setup_hanziwriter_card()])
+mw.form.menuTools.addAction(setup_action)
 
-# refresh_action = QAction("Refresh HanziWriter Templates", mw)
-# refresh_action.triggered.connect(refresh_templates)
-# mw.form.menuTools.addAction(refresh_action)
+refresh_action = QAction("Refresh HanziWriter Templates", mw)
+refresh_action.triggered.connect(refresh_templates)
+mw.form.menuTools.addAction(refresh_action)
 
 # Hooks
 current_editor = None
