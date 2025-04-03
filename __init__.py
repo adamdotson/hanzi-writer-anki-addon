@@ -125,7 +125,6 @@ def update_pinyin_field(wasChanged, note, field_idx):
         if note and note.model()["name"] == card_name and field_idx == 0:
             hanzi_idx = current_editor.note._fieldOrd("Hanzi")
             if field_idx == hanzi_idx:
-                current_editor.note["Pinyin"] = "blah"
                 hanzi = current_editor.note["Hanzi"][:]
                 hanziFilteredStr = re.sub(r'[^\u4E00-\u9FFF]', '', hanzi)
                 if hanziFilteredStr:
