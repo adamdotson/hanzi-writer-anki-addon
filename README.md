@@ -4,6 +4,8 @@
 
 Please report any issues on the issues tab here on GitHub.
 
+![aihao-writing-example](https://github.com/user-attachments/assets/b9355a77-6a1b-495d-b026-673c3667c84e)
+
 Hanzi Quiz allows you to practice writing Chinese characters (simplified and traditional) right within Anki! It utilizes hanzi-writer.js (https://hanziwriter.org/docs.html) within a custom card template to allow you to practice writing in the correct stroke order. As you become more familiar with the character, the quiz forces you to actively recall it more - hiding previews and animations - allowing you to engage your active recall. On the back side of each card, there is a practice mode to get familiar with new cards as well as cards that give you extra trouble.
 
 Features:
@@ -27,3 +29,5 @@ How to set up:
 - If desired, add an audio file.
 - Leave the "Proficiency" field blank.
 - Add the card to a deck and practice the stroke order!
+  
+  ![aihao-create-example](https://github.com/user-attachments/assets/13854321-4ea9-4483-a2ed-acad7c6933f2)
