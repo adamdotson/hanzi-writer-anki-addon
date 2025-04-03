@@ -154,10 +154,9 @@
             try {
                 if (container) {
                     var hanziDiv = document.getElementById('hanzi-container');
-                    ['touchstart', 'touchmove', 'touchend'].forEach(function(eventName) {
+                    ['touchstart'].forEach(function(eventName) {
                         hanziDiv.addEventListener(eventName, function(e) {
                             e.stopPropagation();
-                            e.preventDefault();
                         }, false);
                     });
 
