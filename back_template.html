@@ -74,24 +74,36 @@
         </svg>
     </div>
     <div class="meaning">{{Meaning}}</div>
-    <button id="#preview-btn" class="preview-btn" onclick="ShowFullAnimation()">Show Preview</button>
-    <button id="#quiz-btn" class="preview-btn" onclick="StartFullQuiz()">Practice</button>
-    <button id="#toggle-preview-btn" class="preview-btn" onclick="TogglePreview()">Toggle Outline</button>
+    <button id="preview-btn" class="preview-btn" onclick="ShowFullAnimation()">Show Preview</button>
+    <button id="quiz-btn" class="preview-btn" onclick="StartFullQuiz()">Practice</button>
+    <button id="toggle-preview-btn" class="preview-btn" onclick="TogglePreview()">Toggle Outline</button>
     <script src="hanzi-writer.min.js"></script>
     <script>
-        var writer;
-        var container = document.getElementById('hanzi-container');
-        var proficiency = parseInt(`{{Proficiency}}` || 0);
-        var currCharIndex = 0;
-        var fullString = '{{Hanzi}}'.replace(/[^\u4E00-\u9FFF]/g, '') || '字';
-        var currChar = fullString[currCharIndex];
-        var shouldShowOutline = true;
+        // Global variables
+        let writer = null; // Explicitly initialize to null
+        const container = document.getElementById('hanzi-container');
+        const proficiency = parseInt(`{{Proficiency}}` || 0);
+        let currCharIndex = 0;
+        const fullString = '{{Hanzi}}'.replace(/[^\u4E00-\u9FFF]/g, '') || '字';
+        let currChar = fullString[currCharIndex];
+        let isAnimating = false; // Track animation/quiz state
+        let shouldShowOutline = true;
+
+        // Reset writer to avoid conflicts from front template
+        function resetWriter() {
+            writer = null;
+            console.log("Writer reset for card back");
+        }
 
         function TriggerAnimation() {
-            writer.animateCharacter({
-                onComplete: function() {
-                    ShowNextCharacterAnimation();
-                }
+            if (isAnimating) return;
+            isAnimating = true;
+            writer.animateCharacter().then(() => {
+                isAnimating = false;
+                ShowNextCharacterAnimation();
+            }).catch((error) => {
+                console.error("Animation failed:", error);
+                isAnimating = false;
             });
         }
 
@@ -99,49 +111,65 @@
             if (currCharIndex < fullString.length - 1) {
                 currCharIndex += 1;
                 currChar = fullString[currCharIndex];
-                writer.setCharacter(currChar);
-
-                TriggerAnimation();
+                writer.setCharacter(currChar).then(() => {
+                    TriggerAnimation();
+                }).catch((error) => {
+                    console.error("Set character failed:", error);
+                    isAnimating = false;
+                });
             }
         }
 
         function TriggerQuiz() {
+            if (isAnimating) return;
+            isAnimating = true;
             writer.quiz({
-                onComplete: function() {
+                onComplete: function(summaryData) {
+                    isAnimating = false;
                     ShowNextCharacterQuiz();
                 }
-            })
+            });
         }
 
         function ShowNextCharacterQuiz() {
             if (currCharIndex < fullString.length - 1) {
                 currCharIndex += 1;
                 currChar = fullString[currCharIndex];
-                writer.setCharacter(currChar);
-
-                TriggerQuiz();
+                writer.setCharacter(currChar).then(() => {
+                    TriggerQuiz();
+                }).catch((error) => {
+                    console.error("Set character failed:", error);
+                    isAnimating = false;
+                });
             }
         }
 
         function ShowFullAnimation() {
+            if (isAnimating) return;
             writer.cancelQuiz();
             currCharIndex = 0;
             currChar = fullString[currCharIndex];
             writer.setCharacter(currChar).then(() => {
                 TriggerAnimation();
+            }).catch((error) => {
+                console.error("Show full animation failed:", error);
             });
         }
 
         function StartFullQuiz() {
+            if (isAnimating) return;
             writer.cancelQuiz();
             currCharIndex = 0;
             currChar = fullString[currCharIndex];
             writer.setCharacter(currChar).then(() => {
                 TriggerQuiz();
+            }).catch((error) => {
+                console.error("Start full quiz failed:", error);
             });
         }
 
         function TogglePreview() {
+            if (isAnimating) return;
             shouldShowOutline = !shouldShowOutline;
             if (shouldShowOutline) {
                 writer.showOutline();
@@ -151,43 +179,73 @@
         }
 
         function initializeHanziWriter() {
-            try {
-                if (container) {
-                    var hanziDiv = document.getElementById('hanzi-container');
-                    ['touchstart'].forEach(function(eventName) {
-                        hanziDiv.addEventListener(eventName, function(e) {
-                            e.stopPropagation();
-                        }, false);
-                    });
-
-                    //Set playback speed based on proficiency.
-                    var strokeSpeed = 1;
-                    var strokeDelay = 500;
-                    if (proficiency >= 3) {
-                        strokeSpeed = 1.5;
-                        strokeDelay = 100;
-                    }
-
-                    //Determine whether outline should be shown.
-                    writer = HanziWriter.create('grid-background-target', currChar, {
-                        width: 300,
-                        height: 300,
-                        outlineColor: '#999',
-                        showOutline: shouldShowOutline,
-                        showCharacter: true,
-                        padding: 10,
-                        strokeAnimationSpeed: strokeSpeed,
-                        delayBetweenStrokes: strokeDelay,
-                        strokeColor: '#333',
-                    });
-
-                    TriggerAnimation();
-                }
-            } catch (e) {
-                setTimeout(initializeHanziWriter, 100);
+            if (writer) {
+                console.log("Writer already initialized for this card back");
+                return true;
             }
+            if (!container || !window.HanziWriter) {
+                console.warn("Container or HanziWriter not ready");
+                return false;
+            }
+
+            const hanziDiv = document.getElementById('hanzi-container');
+            ['touchstart'].forEach(function(eventName) {
+                hanziDiv.addEventListener(eventName, function(e) {
+                    e.stopPropagation();
+                }, false);
+            });
+
+            // Set playback speed based on proficiency
+            const strokeSpeed = proficiency >= 3 ? 1.5 : 1;
+            const strokeDelay = proficiency >= 3 ? 100 : 500;
+
+            writer = HanziWriter.create('grid-background-target', currChar, {
+                width: 300,
+                height: 300,
+                outlineColor: '#999',
+                showOutline: shouldShowOutline,
+                showCharacter: true,
+                padding: 10,
+                strokeAnimationSpeed: strokeSpeed,
+                delayBetweenStrokes: strokeDelay,
+                strokeColor: '#333',
+            });
+
+            // Start with animation by default
+            TriggerAnimation();
+            console.log("HanziWriter initialized successfully for card back");
+            return true;
         }
-        initializeHanziWriter();
+
+        function waitForResourcesAndInitialize() {
+            let attempts = 0;
+            const maxAttempts = 10; // Limit retries
+            const retryDelay = 100; // Delay between retries (ms)
+
+            function tryInitialize() {
+                if (initializeHanziWriter()) {
+                    return;
+                }
+                if (attempts < maxAttempts) {
+                    attempts++;
+                    console.log(`Retrying initialization (attempt ${attempts}/${maxAttempts})...`);
+                    setTimeout(tryInitialize, retryDelay);
+                } else {
+                    console.error("Failed to initialize HanziWriter after maximum attempts");
+                }
+            }
+
+            // Reset writer before attempting initialization
+            resetWriter();
+            tryInitialize();
+        }
+
+        // Wait for DOM and resources to be fully loaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            waitForResourcesAndInitialize();
+        } else {
+            document.addEventListener('DOMContentLoaded', waitForResourcesAndInitialize);
+        }
     </script>
 </body>
 </html>
