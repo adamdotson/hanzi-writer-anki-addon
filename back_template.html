@@ -79,7 +79,7 @@
     <button id="#toggle-preview-btn" class="preview-btn" onclick="TogglePreview()">Toggle Outline</button>
     <script src="hanzi-writer.min.js"></script>
     <script>
-        var writer;
+        var backWriter = null;
         var container = document.getElementById('hanzi-container');
         var proficiency = parseInt(`{{Proficiency}}` || 0);
         var currCharIndex = 0;
@@ -87,8 +87,14 @@
         var currChar = fullString[currCharIndex];
         var shouldShowOutline = true;
 
+        function resetWriter() {
+            if (backWriter) {
+                backWriter = null;
+            }
+        }
+
         function TriggerAnimation() {
-            writer.animateCharacter({
+            backWriter.animateCharacter({
                 onComplete: function() {
                     ShowNextCharacterAnimation();
                 }
@@ -99,14 +105,14 @@
             if (currCharIndex < fullString.length - 1) {
                 currCharIndex += 1;
                 currChar = fullString[currCharIndex];
-                writer.setCharacter(currChar);
+                backWriter.setCharacter(currChar);
 
                 TriggerAnimation();
             }
         }
 
         function TriggerQuiz() {
-            writer.quiz({
+            backWriter.quiz({
                 onComplete: function() {
                     ShowNextCharacterQuiz();
                 }
@@ -117,26 +123,26 @@
             if (currCharIndex < fullString.length - 1) {
                 currCharIndex += 1;
                 currChar = fullString[currCharIndex];
-                writer.setCharacter(currChar);
+                backWriter.setCharacter(currChar);
 
                 TriggerQuiz();
             }
         }
 
         function ShowFullAnimation() {
-            writer.cancelQuiz();
+            backWriter.cancelQuiz();
             currCharIndex = 0;
             currChar = fullString[currCharIndex];
-            writer.setCharacter(currChar).then(() => {
+            backWriter.setCharacter(currChar).then(() => {
                 TriggerAnimation();
             });
         }
 
         function StartFullQuiz() {
-            writer.cancelQuiz();
+            backWriter.cancelQuiz();
             currCharIndex = 0;
             currChar = fullString[currCharIndex];
-            writer.setCharacter(currChar).then(() => {
+            backWriter.setCharacter(currChar).then(() => {
                 TriggerQuiz();
             });
         }
@@ -144,13 +150,15 @@
         function TogglePreview() {
             shouldShowOutline = !shouldShowOutline;
             if (shouldShowOutline) {
-                writer.showOutline();
+                backWriter.showOutline();
             } else {
-                writer.hideOutline();
+                backWriter.hideOutline();
             }
         }
 
         function initializeHanziWriter() {
+            hanziDiv = null;
+            backWriter = null;
             try {
                 if (container) {
                     var hanziDiv = document.getElementById('hanzi-container');
@@ -169,7 +177,7 @@
                     }
 
                     //Determine whether outline should be shown.
-                    writer = HanziWriter.create('grid-background-target', currChar, {
+                    backWriter = HanziWriter.create('grid-background-target', currChar, {
                         width: 300,
                         height: 300,
                         outlineColor: '#999',
@@ -181,12 +189,14 @@
                         strokeColor: '#333',
                     });
 
-                    TriggerAnimation();
+                    TriggerQuiz();
                 }
             } catch (e) {
                 setTimeout(initializeHanziWriter, 100);
             }
         }
+        
+        
         initializeHanziWriter();
     </script>
 </body>

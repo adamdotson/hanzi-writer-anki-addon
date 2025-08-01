@@ -86,15 +86,21 @@
     </div>
     <script src="hanzi-writer.min.js"></script>
     <script>
-        var writer;
+        var frontWriter = null;
         var container = document.getElementById('hanzi-container');
         var proficiency = parseInt(`{{Proficiency}}` || 0);
         var currCharIndex = 0;
         var fullString = '{{Hanzi}}'.replace(/[^\u4E00-\u9FFF]/g, '') || '字';
         var currChar = fullString[currCharIndex];
 
+        function resetWriter() {
+            if (frontWriter) {
+                frontWriter = null;
+            }
+        }
+
         function TriggerAnimation() {
-            writer.animateCharacter({
+            frontWriter.animateCharacter({
                 onComplete: function() {
                     TriggerQuiz();
                 }
@@ -102,7 +108,7 @@
         }
 
         function TriggerQuiz() {
-            writer.quiz({
+            frontWriter.quiz({
                 onComplete: function() {
                     ShowNextCharacter();
                 }
@@ -113,20 +119,22 @@
             if (currCharIndex < fullString.length - 1) {
                 currCharIndex += 1;
                 currChar = fullString[currCharIndex];
-                writer.setCharacter(currChar);
+                frontWriter.setCharacter(currChar);
 
-                if (proficiency < 5) {
-                    TriggerAnimation();
-                } else {
-                    TriggerQuiz();
-                }
+                TriggerQuiz();
+
+                // if (proficiency < 5) {
+                //     TriggerAnimation();
+                // } else {
+                //     TriggerQuiz();
+                // }
             }
         }
 
         function StartFromFirstChar() {
             currCharIndex = 0;
             currChar = fullString[currCharIndex];
-            writer.setCharacter(currChar).then(() => {
+            frontWriter.setCharacter(currChar).then(() => {
                 if (proficiency < 5) {
                 TriggerAnimation();
                 } else {
@@ -136,6 +144,8 @@
         }
 
         function initializeHanziWriter() {
+            hanziDiv = null;
+            frontWriter = null;
             try {
                 if (container) {
                     var hanziDiv = document.getElementById('hanzi-container');
@@ -164,7 +174,7 @@
                         numMissesBeforeHint = 1;
                     }
 
-                    writer = HanziWriter.create('grid-background-target', currChar, {
+                    frontWriter = HanziWriter.create('grid-background-target', currChar, {
                         width: 300,
                         height: 300,
                         outlineColor: '#999',
@@ -178,7 +188,8 @@
                     });
 
                     if (proficiency < 5) {
-                        TriggerAnimation();
+                        //TriggerAnimation();
+                        TriggerQuiz();
                     } else {
                         var previewBtn = document.querySelector('#preview-btn');
                         if (previewBtn) {
